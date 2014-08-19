@@ -1,0 +1,25 @@
+apply plugin: "java"
+
+sourceCompatibility = 1.6
+sourceSets.main.java.srcDirs = [ "src/" ]
+
+version = '1.0'
+
+ext {
+    gdxVersion = '1.1.0'
+}
+
+task gasLib(type: Jar)
+
+dependencies {
+    compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-controllers:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+    compile "org.luaj:luaj-jse:2.0"
+    compile group: 'com.google.guava', name: 'guava', version: '12.0'
+}
+
+artifacts {
+    archives gasLib
+}
