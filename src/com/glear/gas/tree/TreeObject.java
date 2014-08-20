@@ -1,25 +1,12 @@
 package com.glear.gas.tree;
 
 import com.glear.gas.lua.GetParameter;
+import com.glear.gas.lua.LuaUtil;
 import com.glear.gas.lua.SetParameter;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
-import org.luaj.vm2.*;
-import org.luaj.vm2.lib.OneArgFunction;
-import org.luaj.vm2.lib.ThreeArgFunction;
-import org.luaj.vm2.lib.TwoArgFunction;
-import org.luaj.vm2.lib.VarArgFunction;
-import org.luaj.vm2.lib.jse.CoerceJavaToLua;
-import org.luaj.vm2.lib.jse.CoerceLuaToJava;
-import org.luaj.vm2.lib.jse.LuajavaLib;
-import sun.reflect.generics.tree.Tree;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import com.google.common.collect.Multimap;
+
 import java.util.*;
 
 /**
@@ -27,14 +14,6 @@ import java.util.*;
  */
 public class TreeObject {
 
-
-    //holds all our fast access lua table variables
-    private final static Map<Class,Map<String,GetParameter> > GET_FUNCS = new HashMap<Class, Map<String,GetParameter> >();
-    private final static Map<Class,Map<String,SetParameter> > ASSIGN_FUNCS = new HashMap<Class, Map<String,SetParameter> >();
-
-
-
-    private final LuaTable internalTable = new LuaTable();
     private int id;
     private String name;
     //keep this private, only base class messes with it directly
@@ -155,96 +134,7 @@ public class TreeObject {
     }
 
 
-    /**
-     * this should ONLY be called once per class in its static initialization block
-     * @param clazz
-     */
-    protected static void initializeLuaAccess(final Class clazz)
-    {
 
-        LuaValue luaobj = null;
-        try {
-            luaobj = CoerceJavaToLua.coerce(clazz.newInstance());
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        final Map<String, GetParameter> myGetters = GET_FUNCS.get(clazz);
-        final Map<String, SetParameter> mySetters = ASSIGN_FUNCS.get(clazz);
-        LuaTable classTable = (LuaTable)luaobj.getmetatable();
-        final TwoArgFunction oldIndex = (TwoArgFunction) classTable.get("__index");
-        classTable.set("__index",new TwoArgFunction() {
-            private Map methods;
-            @Override
-            public LuaValue call(LuaValue arg1, LuaValue key) {
-                TreeObject obj = (TreeObject)arg1.touserdata();
-                GetParameter func = myGetters.get(key.tojstring());
-                if(func!= null)
-                {
-                    return CoerceJavaToLua.coerce(func.get(obj));
-                }
-                //WARNING: this old access will be slow, put as much in the fast accessing static map as possible
-                return oldIndex.call(arg1,key);
-            }
-        });
-        final ThreeArgFunction oldNewIndex = (ThreeArgFunction) classTable.get("__newindex");
-        classTable.set("__newindex",new ThreeArgFunction() {
-            @Override
-            public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-                TreeObject obj = (TreeObject)arg1.touserdata();
-                SetParameter func = mySetters.get(arg2.tojstring());
-                if(func!= null)
-                {
-                    switch (arg3.type()) {
-                        case TBOOLEAN:
-                            func.set(obj, arg3.toboolean());
-                            break;
-                        case TNUMBER:
-                            func.set(obj, arg3.tofloat());
-                            break;
-                        case TSTRING:
-                            func.set(obj, arg3.tojstring());
-                            break;
-                        case TTABLE:
-                            func.set(obj,(LuaTable)arg3);
-                            break;
-                        case TFUNCTION:
-                            func.set(obj,(LuaFunction)arg3);
-                            break;
-                        default:
-                            func.set(obj,arg3.touserdata());
-                            break;
-                    }
-                }
-                else
-                {
-                    return oldNewIndex.call(arg1,arg2,arg3);
-                }
-                return NONE;
-            }
-        });
-        classTable.set("__div",new TwoArgFunction() {
-            @Override
-            public LuaValue call(LuaValue arg1, LuaValue arg2) {
-                Object obj = arg1.touserdata();
-                return CoerceJavaToLua.coerce(((TreeObject)obj).getFirstChildByName(arg2.tojstring()));
-            }
-        });
-        classTable.set("__add",new TwoArgFunction() {
-            @Override
-            public LuaValue call(LuaValue arg1, LuaValue arg2) {
-                Object obj1 = arg1.touserdata();
-                Object obj2 = arg2.touserdata();
-                if(obj2 != null && obj2 instanceof TreeObject) {
-                    ((TreeObject)obj1).addChild((TreeObject)obj2);
-                    return arg1;
-                }
-                return null;
-            }
-        });
-
-    }
 
     //------------------------------------------------------
     //Initialize our static lua access maps
@@ -286,10 +176,7 @@ public class TreeObject {
             }
         });
 
-        GET_FUNCS.put(TreeObject.class,getmap);
-        ASSIGN_FUNCS.put(TreeObject.class,putmap);
-
-        initializeLuaAccess(TreeObject.class);
+        LuaUtil.initializeLuaAccess(TreeObject.class, getmap, putmap);
     }
 
 }
