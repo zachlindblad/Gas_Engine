@@ -23,19 +23,6 @@ public class LuaUtil {
     //simple name to class mapping
     public static final HashMap<String,Class> KEY_TO_CLASS = new HashMap<String, Class>();
 
-    private static TwoArgFunction TREE_ADD = new TwoArgFunction() {
-        @Override
-        public LuaValue call(LuaValue arg1, LuaValue arg2) {
-            Object obj1 = arg1.touserdata();
-            Object obj2 = arg2.touserdata();
-            if(obj2 != null && obj2 instanceof TreeObject) {
-                ((TreeObject)obj2).setParent((TreeObject)obj1);
-                return arg1;
-            }
-            return null;
-        }
-    };
-
     private static TwoArgFunction TREE_DIV = new TwoArgFunction() {
         @Override
         public LuaValue call(LuaValue arg1, LuaValue arg2) {
@@ -132,7 +119,6 @@ public class LuaUtil {
             }
         });
         classTable.set("__div",TREE_DIV);
-        classTable.set("__add",TREE_ADD);
 
     }
 

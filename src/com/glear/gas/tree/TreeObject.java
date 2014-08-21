@@ -12,17 +12,11 @@ import java.util.*;
 /**
  * Created by biscuit on 5/25/2014.
  */
-public class TreeObject {
+public class TreeObject extends RootObject {
 
-    private int id;
-    private String name;
+
     //keep this private, only base class messes with it directly
     private TreeObject parent;
-
-    private Map<Integer,TreeObject> idToChild = new HashMap<Integer,TreeObject>();
-    private Multimap<String,TreeObject> nameToChild = ArrayListMultimap.create();
-
-    private static int ID_COUNTER = 0;
 
     /**
      * protected constructor, treeObject cannot be instantiated directly
@@ -30,61 +24,15 @@ public class TreeObject {
     public TreeObject()
     {
         super();
-        id = ID_COUNTER++;
-        name = "TreeObject";
+        setName("TreeObject");
+    }
+    @Override
+    protected final void registerTrackers() {
+
+        //we dont want any subclasses registering with rootmanager
     }
 
-    public TreeObject getFirstChildByName(String name) {
-        if(nameToChild.containsKey(name)) {
-            return nameToChild.get(name).iterator().next();
-        }
-        return null;
-    }
-    /**
-     *
-     * @return unmodifyable collection of my children
-     */
-    public Collection<TreeObject> getChildren()
-    {
-        return idToChild.values();
-    }
-    private void addChild(TreeObject child)
-    {
-        idToChild.put(child.id,child);
-        nameToChild.put(child.name,child);
-    }
-    private boolean removeChild(TreeObject child)
-    {
-        idToChild.remove(child.id);
-        return nameToChild.remove(child.name, child);
-    }
-    private void destroy()
-    {
-        Map<Integer,TreeObject> savedIdToChild = idToChild;
-        idToChild = Collections.emptyMap();
-        nameToChild.clear();
-        Iterator<TreeObject> it= savedIdToChild.values().iterator();
-        while(it.hasNext())
-        {
-            TreeObject obj = it.next();
-            it.remove();
-            obj.setParent(null);
-        }
-        idToChild=savedIdToChild;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-    private void changeChildName(TreeObject child, String nname)
-    {
-        if(nameToChild.remove(child.getName(), child))
-        {
-            child.name = nname;
-            nameToChild.put(child.getName(), child);
-        }
-    }
+    @Override
     public void setName(String nname)
     {
         TreeObject parent = getParent();
@@ -94,7 +42,7 @@ public class TreeObject {
         }
         else
         {
-            name = nname;
+            super.setName(nname);
         }
     }
 
@@ -119,23 +67,6 @@ public class TreeObject {
         parent = nparent;
     }
 
-    public int getId()
-    {
-        return id;
-    }
-
-    public void printTree() {
-        System.out.println("<"+name+":"+this.getClass().getSimpleName()+">");
-        for(TreeObject obj : getChildren())
-        {
-            obj.printTree();
-        }
-        System.out.println("</end "+name+">");
-    }
-
-
-
-
     //------------------------------------------------------
     //Initialize our static lua access maps
     //------------------------------------------------------
@@ -143,18 +74,6 @@ public class TreeObject {
     {
         Map<String,GetParameter> getmap= new HashMap<String,GetParameter>();
         Map<String,SetParameter> putmap= new HashMap<String,SetParameter>();
-        getmap.put("name",new GetParameter<TreeObject,String>() {
-            @Override
-            public String get(TreeObject object) {
-                return object.getName();
-            }
-        });
-        putmap.put("name",new SetParameter<TreeObject,String>() {
-            @Override
-            public void set(TreeObject object, String value) {
-                object.setName(value);
-            }
-        });
 
         getmap.put("parent",new GetParameter<TreeObject,TreeObject>() {
             @Override
@@ -166,13 +85,6 @@ public class TreeObject {
             @Override
             public void set(TreeObject object, TreeObject value) {
                 object.setParent(value);
-            }
-        });
-
-        getmap.put("id",new GetParameter<TreeObject,Integer>() {
-            @Override
-            public Integer get(TreeObject object) {
-                return object.getId();
             }
         });
 
