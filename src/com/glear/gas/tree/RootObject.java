@@ -135,7 +135,7 @@ public class RootObject {
             }
         });
 
-        LuaUtil.initializeLuaAccess(TreeObject.class, getmap, putmap);
+        LuaUtil.initializeLuaAccess(RootObject.class, getmap, putmap);
     }
 
 }

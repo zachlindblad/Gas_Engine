@@ -1,6 +1,6 @@
 package com.glear.gas.lua;
 
-import com.glear.gas.tree.TreeObject;
+import com.glear.gas.tree.RootObject;
 import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
@@ -27,7 +27,7 @@ public class LuaUtil {
         @Override
         public LuaValue call(LuaValue arg1, LuaValue arg2) {
             Object obj = arg1.touserdata();
-            return CoerceJavaToLua.coerce(((TreeObject)obj).getFirstChildByName(arg2.tojstring()));
+            return CoerceJavaToLua.coerce(((RootObject)obj).getFirstChildByName(arg2.tojstring()));
         }
     };
 
@@ -72,7 +72,7 @@ public class LuaUtil {
             private Map methods;
             @Override
             public LuaValue call(LuaValue arg1, LuaValue key) {
-                TreeObject obj = (TreeObject)arg1.touserdata();
+                Object obj = arg1.touserdata();
                 GetParameter func = myGetters.get(key.tojstring());
                 if(func!= null)
                 {
@@ -86,7 +86,7 @@ public class LuaUtil {
         classTable.set("__newindex",new ThreeArgFunction() {
             @Override
             public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-                TreeObject obj = (TreeObject)arg1.touserdata();
+                Object obj = arg1.touserdata();
                 SetParameter func = mySetters.get(arg2.tojstring());
                 if(func!= null)
                 {
